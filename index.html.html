@@ -1,0 +1,864 @@
+import React, { useState, useEffect, useMemo } from 'react';
+
+import { ChevronRight, RefreshCw, CheckCircle2, BookOpen, Moon, Sun, Clock, Send, RotateCcw, ChevronDown, ChevronUp, Map, ArrowLeft, Star, Shield, Zap, FileText, GitCompareArrows, MessageSquareQuote } from 'lucide-react';
+
+
+
+// 데이터는 기존과 동일하게 사용합니다.
+
+const levelData = {
+
+    // ... (기존 levelData 객체를 여기에 그대로 붙여넣으세요) ...
+
+    // basic, intermediate, advanced 레벨의 문제 데이터 전체
+
+};
+
+
+
+
+
+const TranslationApp = () => {
+
+  const [selectedLevel, setSelectedLevel] = useState(null);
+
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  const [userAnswer, setUserAnswer] = useState('');
+
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  const [startTime, setStartTime] = useState(null);
+
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  const [completedTime, setCompletedTime] = useState(null);
+
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  const [solvedQuestions, setSolvedQuestions] = useState({});
+
+  const [showWritingGuide, setShowWritingGuide] = useState(false);
+
+  // UI 개선을 위한 새로운 상태: 활성화된 결과 탭
+
+  const [activeTab, setActiveTab] = useState('evaluation');
+
+
+
+  // ... (기존 useEffect, formatTime, evaluateAnswer, 기타 핸들러 함수들) ...
+
+  // 기존 로직 함수들은 변경 없이 그대로 사용하면 됩니다. 
+
+  // 아래에 필요한 함수들을 모두 포함해두었습니다.
+
+
+
+  useEffect(() => {
+
+    if (selectedLevel) {
+
+      setStartTime(Date.now());
+
+      setIsTimerRunning(true);
+
+    }
+
+  }, [selectedLevel]);
+
+
+
+  useEffect(() => {
+
+    let interval = null;
+
+    if (isTimerRunning) {
+
+      interval = setInterval(() => {
+
+        setElapsedTime(Date.now() - startTime);
+
+      }, 100);
+
+    }
+
+    return () => {
+
+      if (interval) clearInterval(interval);
+
+    };
+
+  }, [isTimerRunning, startTime]);
+
+
+
+  useEffect(() => {
+
+    if (selectedLevel) {
+
+      setStartTime(Date.now());
+
+      setElapsedTime(0);
+
+      setCompletedTime(null);
+
+      setIsTimerRunning(true);
+
+      setUserAnswer('');
+
+      setIsSubmitted(false);
+
+      setShowAnswer(false);
+
+      setShowWritingGuide(false);
+
+      setActiveTab('evaluation'); // 새 문제 시작 시 탭 초기화
+
+    }
+
+  }, [currentQuestion, selectedLevel]);
+
+
+
+  const formatTime = (milliseconds) => {
+
+    const totalSeconds = Math.floor(milliseconds / 1000);
+
+    const minutes = Math.floor(totalSeconds / 60);
+
+    const seconds = totalSeconds % 60;
+
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  };
+
+  
+
+  const evaluateAnswer = useMemo(() => (userAnswer, correctAnswer) => {
+
+    // ... (기존 evaluateAnswer 함수 로직을 여기에 그대로 붙여넣으세요) ...
+
+  }, []);
+
+
+
+  const retryCurrentQuestion = () => {
+
+    setUserAnswer('');
+
+    setIsSubmitted(false);
+
+    setShowAnswer(false);
+
+    setShowWritingGuide(false);
+
+    setStartTime(Date.now());
+
+    setElapsedTime(0);
+
+    setCompletedTime(null);
+
+    setIsTimerRunning(true);
+
+    setActiveTab('evaluation');
+
+  };
+
+
+
+  const handleSubmit = () => {
+
+    if (userAnswer.trim() === '') {
+
+      alert('답안을 입력해주세요.');
+
+      return;
+
+    }
+
+    
+
+    setIsTimerRunning(false);
+
+    setCompletedTime(elapsedTime);
+
+    setIsSubmitted(true);
+
+    setShowAnswer(true);
+
+    
+
+    const evaluation = evaluateAnswer(userAnswer, getCurrentQuestions()[currentQuestion].english);
+
+    setSolvedQuestions(prev => ({
+
+      ...prev,
+
+      [`${selectedLevel}-${currentQuestion}`]: {
+
+        score: evaluation.score,
+
+        userAnswer: userAnswer,
+
+        timestamp: Date.now()
+
+      }
+
+    }));
+
+  };
+
+
+
+  const handleNextQuestion = () => {
+
+    if (currentQuestion < getCurrentQuestions().length - 1) {
+
+      setCurrentQuestion(currentQuestion + 1);
+
+    }
+
+  };
+
+
+
+  const handlePreviousQuestion = () => {
+
+    if (currentQuestion > 0) {
+
+      setCurrentQuestion(currentQuestion - 1);
+
+    }
+
+  };
+
+
+
+  const handleReset = () => {
+
+    setCurrentQuestion(0);
+
+  };
+
+  
+
+  const handleBackToLevelSelect = () => {
+
+    setSelectedLevel(null);
+
+    setCurrentQuestion(0);
+
+    setShowAnswer(false);
+
+    setUserAnswer('');
+
+    setIsSubmitted(false);
+
+    setShowWritingGuide(false);
+
+    setSolvedQuestions({});
+
+  };
+
+  
+
+  const toggleDarkMode = () => {
+
+    setIsDarkMode(!isDarkMode);
+
+  };
+
+  
+
+  const getCurrentQuestions = () => {
+
+    return selectedLevel ? levelData[selectedLevel].questions : [];
+
+  };
+
+  
+
+  const getCurrentLevelData = () => {
+
+    return selectedLevel ? levelData[selectedLevel] : null;
+
+  };
+
+  
+
+  const progress = selectedLevel ? ((currentQuestion + 1) / getCurrentQuestions().length) * 100 : 0;
+
+
+
+  // UI 개선: 색상 관리 단순화 및 체계화
+
+  const getColorClasses = (color) => {
+
+    const commonClasses = {
+
+      text: `text-${color}-500`,
+
+      darkText: `dark:text-${color}-400`,
+
+      bg: `bg-${color}-500`,
+
+      darkBg: `dark:bg-${color}-500`,
+
+      border: `border-${color}-500`,
+
+      darkBorder: `dark:border-${color}-400`,
+
+      progress: `bg-${color}-500`,
+
+      button: `bg-${color}-600 hover:bg-${color}-700 dark:bg-${color}-500 dark:hover:bg-${color}-600`,
+
+      ring: `focus:ring-${color}-500`,
+
+    };
+
+    return commonClasses;
+
+  };
+
+  
+
+  // 레벨 선택 화면
+
+  if (!selectedLevel) {
+
+    return (
+
+      <div className={`min-h-screen p-4 sm:p-6 lg:p-8 transition-colors duration-500 ${isDarkMode ? 'bg-slate-900 text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
+
+        <div className="max-w-4xl mx-auto">
+
+          <header className="flex justify-between items-center mb-10">
+
+            <div className="flex items-center gap-3">
+
+              <BookOpen className="w-8 h-8 text-blue-500" />
+
+              <h1 className="text-3xl font-bold">해사영어 영작 훈련</h1>
+
+            </div>
+
+            <button
+
+              onClick={toggleDarkMode}
+
+              className={`p-2 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-slate-700 hover:bg-slate-600 text-yellow-400' : 'bg-white hover:bg-slate-200 text-slate-600'}`}
+
+            >
+
+              {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+
+            </button>
+
+          </header>
+
+
+
+          <div className="text-center mb-12">
+
+            <h2 className="text-4xl font-extrabold mb-4">학습 레벨 선택</h2>
+
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+
+              실력에 맞는 난이도를 선택하여 영작 훈련을 시작하세요 🚢
+
+            </p>
+
+          </div>
+
+
+
+          <div className="grid md:grid-cols-3 gap-8">
+
+            {Object.entries(levelData).map(([levelKey, level]) => {
+
+                const colors = getColorClasses(level.color);
+
+                return (
+
+                    <button
+
+                        key={levelKey}
+
+                        onClick={() => setSelectedLevel(levelKey)}
+
+                        className={`text-left p-6 rounded-2xl shadow-lg border-2 border-transparent hover:border-${level.color}-500 transition-all duration-300 transform hover:-translate-y-2 ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}
+
+                    >
+
+                        <div className={`p-3 inline-block rounded-xl mb-4 ${colors.bg}`}>
+
+                            {React.cloneElement(level.icon, { className: 'w-7 h-7 text-white' })}
+
+                        </div>
+
+                        <h3 className="text-xl font-bold mb-2">{level.title}</h3>
+
+                        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm">{level.subtitle}</p>
+
+                        <div className="flex items-center gap-2 text-xs">
+
+                            <span className={`px-3 py-1 rounded-full font-semibold ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+
+                                📚 {level.questions.length} 문제
+
+                            </span>
+
+                            <span className={`px-3 py-1 rounded-full font-semibold ${colors.text} ${isDarkMode ? `bg-${level.color}-500/10` : `bg-${level.color}-100`}`}>
+
+                                {level.difficulty}
+
+                            </span>
+
+                        </div>
+
+                    </button>
+
+                )
+
+            })}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+
+  // --- 문제 풀이 화면 ---
+
+  const currentLevelData = getCurrentLevelData();
+
+  const colors = getColorClasses(currentLevelData.color);
+
+
+
+  const evaluation = isSubmitted ? evaluateAnswer(userAnswer, currentQuestions[currentQuestion].english) : null;
+
+
+
+  return (
+
+    <div className={`min-h-screen p-4 sm:p-6 lg:p-8 transition-colors duration-500 ${isDarkMode ? 'bg-slate-900 text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
+
+      <div className="max-w-3xl mx-auto">
+
+        
+
+        {/* 헤더 */}
+
+        <header className="flex justify-between items-center mb-6">
+
+          <button onClick={handleBackToLevelSelect} className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors duration-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600">
+
+            <ArrowLeft className="w-5 h-5" />
+
+            <span>레벨 선택</span>
+
+          </button>
+
+          <div className="flex items-center gap-4">
+
+             <div className="flex items-center gap-2 text-lg font-mono">
+
+                <Clock className={`w-5 h-5 ${colors.text} ${colors.darkText}`} />
+
+                <span>{isTimerRunning ? formatTime(elapsedTime) : (completedTime ? formatTime(completedTime) : '00:00')}</span>
+
+              </div>
+
+            <button
+
+              onClick={toggleDarkMode}
+
+              className={`p-2 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-slate-700 hover:bg-slate-600 text-yellow-400' : 'bg-white hover:bg-slate-200 text-slate-600'}`}
+
+            >
+
+              {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+
+            </button>
+
+          </div>
+
+        </header>
+
+        
+
+        {/* 진행률 */}
+
+        <div className="mb-6">
+
+          <div className="flex justify-between items-center mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+
+            <span>문제 {currentQuestion + 1} / {currentQuestions.length}</span>
+
+            <span>{Math.round(progress)}% 완료</span>
+
+          </div>
+
+          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+
+            <div className={`h-2.5 rounded-full transition-all duration-500 ${colors.progress}`} style={{ width: `${progress}%` }} />
+
+          </div>
+
+        </div>
+
+
+
+        {/* 메인 카드 */}
+
+        <div className={`rounded-2xl shadow-lg p-6 sm:p-8 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}>
+
+          
+
+          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-4">제시된 한국어 문장을 영어로 번역하세요.</h2>
+
+          
+
+          {/* 한국어 문제 */}
+
+          <div className={`border-l-4 p-4 rounded-r-lg mb-6 ${colors.border} ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+
+            <p className="text-xl leading-relaxed">{currentQuestions[currentQuestion].korean}</p>
+
+          </div>
+
+
+
+          {/* 답안 입력창 */}
+
+          {!isSubmitted && (
+
+             <div>
+
+              <textarea
+
+                value={userAnswer}
+
+                onChange={(e) => setUserAnswer(e.target.value)}
+
+                placeholder="여기에 영어 번역을 입력하세요..."
+
+                className={`w-full h-40 p-4 rounded-lg border-2 transition-all duration-200 resize-none text-base focus:outline-none focus:ring-2 ${isDarkMode ? 'bg-slate-700 border-slate-600 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500' : 'bg-white border-slate-300 placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500'}`}
+
+                disabled={isSubmitted}
+
+              />
+
+              <div className="mt-4 flex justify-end">
+
+                <button
+
+                  onClick={handleSubmit}
+
+                  disabled={userAnswer.trim() === ''}
+
+                  className={`px-6 py-3 rounded-lg font-bold text-white transition-all duration-200 flex items-center gap-2 transform disabled:opacity-50 disabled:cursor-not-allowed ${userAnswer.trim() !== '' ? 'hover:scale-105' : ''} ${colors.button}`}
+
+                >
+
+                  <Send className="w-5 h-5" />
+
+                  답안 제출
+
+                </button>
+
+              </div>
+
+            </div>
+
+          )}
+
+
+
+          {/* 결과 표시 (탭 인터페이스) */}
+
+          {showAnswer && isSubmitted && evaluation && (
+
+            <div className="mt-8">
+
+              {/* 탭 버튼 */}
+
+              <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6">
+
+                <TabButton id="evaluation" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CheckCircle2 />}>채점 결과</TabButton>
+
+                <TabButton id="comparison" activeTab={activeTab} setActiveTab={setActiveTab} icon={<GitCompareArrows />}>답안 비교</TabButton>
+
+                <TabButton id="explanation" activeTab={activeTab} setActiveTab={setActiveTab} icon={<MessageSquareQuote />}>상세 해설</TabButton>
+
+                <TabButton id="guide" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Map />}>영작 지도</TabButton>
+
+              </div>
+
+
+
+              {/* 탭 내용 */}
+
+              <div>
+
+                {activeTab === 'evaluation' && (
+
+                  <div className="text-center p-6 rounded-lg bg-slate-100 dark:bg-slate-700/50">
+
+                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2">답안 완성도</p>
+
+                    <p className={`text-6xl font-bold mb-3 ${getScoreColor(evaluation.score, isDarkMode)}`}>
+
+                        {evaluation.score}
+
+                        <span className="text-3xl">%</span>
+
+                    </p>
+
+                    <p className="font-medium">{evaluation.feedback}</p>
+
+                  </div>
+
+                )}
+
+                
+
+                {activeTab === 'comparison' && (
+
+                  <div className="space-y-4">
+
+                    <AnswerBox title="내 답안" answer={userAnswer} color="blue" isDarkMode={isDarkMode}/>
+
+                    <AnswerBox title="모범 답안" answer={currentQuestions[currentQuestion].english} color="green" isDarkMode={isDarkMode}/>
+
+                  </div>
+
+                )}
+
+
+
+                {activeTab === 'explanation' && (
+
+                   <div className="space-y-4">
+
+                      <ExplanationBox title="해설" content={currentQuestions[currentQuestion].explanation} color="purple" isDarkMode={isDarkMode} />
+
+                      <ExplanationBox title="중요 포인트" content={currentQuestions[currentQuestion].keyPoints} color="orange" isDarkMode={isDarkMode} />
+
+                  </div>
+
+                )}
+
+                
+
+                {activeTab === 'guide' && (
+
+                  <div className="space-y-3">
+
+                    {currentQuestions[currentQuestion].writingGuide?.map((step, index) => (
+
+                      <div key={index} className={`flex gap-4 p-3 rounded-lg ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
+
+                        <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full font-bold text-cyan-800 dark:text-cyan-200 ${isDarkMode ? 'bg-cyan-500/20' : 'bg-cyan-100'}`}>{index + 1}</div>
+
+                        <div>
+
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{step.korean}</p>
+
+                          <p className="font-medium">{step.english}</p>
+
+                        </div>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+
+
+              </div>
+
+            </div>
+
+          )}
+
+        </div>
+
+
+
+        {/* 하단 버튼 */}
+
+        {isSubmitted && (
+
+          <div className="flex flex-wrap gap-4 justify-center mt-8">
+
+            <button onClick={retryCurrentQuestion} className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors duration-300 bg-orange-500 hover:bg-orange-600 text-white">
+
+              <RotateCcw className="w-5 h-5" />
+
+              다시 풀기
+
+            </button>
+
+            {currentQuestion < currentQuestions.length - 1 ? (
+
+              <button onClick={handleNextQuestion} className="flex items-center gap-2 px-8 py-3 rounded-lg font-semibold transition-colors duration-300 bg-green-600 hover:bg-green-700 text-white">
+
+                다음 문제 <ChevronRight className="w-5 h-5" />
+
+              </button>
+
+            ) : (
+
+              <button onClick={handleReset} className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold transition-colors duration-300 text-white ${colors.button}`}>
+
+                <RefreshCw className="w-5 h-5" />
+
+                처음부터 다시
+
+              </button>
+
+            )}
+
+          </div>
+
+        )}
+
+
+
+        {/* 완료 메시지 */}
+
+        {currentQuestion === currentQuestions.length - 1 && showAnswer && (
+
+          <div className="mt-8 text-center p-6 rounded-lg bg-green-500/10 border border-green-500/30">
+
+            <h3 className="text-xl font-bold mb-2 text-green-700 dark:text-green-300">
+
+              🎉 축하합니다! {currentLevelData.title}를 완료했습니다!
+
+            </h3>
+
+            <p className="text-green-600 dark:text-green-400">
+
+              다른 레벨에도 도전하여 해사 영어 실력을 더욱 향상시켜 보세요.
+
+            </p>
+
+          </div>
+
+        )}
+
+      </div>
+
+    </div>
+
+  );
+
+};
+
+
+
+
+
+// --- UI 개선을 위한 보조 컴포넌트들 ---
+
+
+
+const TabButton = ({ id, activeTab, setActiveTab, icon, children }) => (
+
+  <button
+
+    onClick={() => setActiveTab(id)}
+
+    className={`flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-300 border-b-2 -mb-px ${
+
+      activeTab === id
+
+        ? 'border-blue-500 text-blue-500'
+
+        : 'border-transparent text-slate-500 hover:text-blue-500'
+
+    }`}
+
+  >
+
+    {React.cloneElement(icon, { className: 'w-5 h-5' })}
+
+    <span className="hidden sm:inline">{children}</span>
+
+  </button>
+
+);
+
+
+
+const AnswerBox = ({ title, answer, color, isDarkMode }) => (
+
+    <div>
+
+        <h3 className={`flex items-center gap-2 text-md font-bold mb-2 ${isDarkMode ? `text-${color}-400` : `text-${color}-600`}`}>
+
+            {title === '내 답안' ? '✏️' : <CheckCircle2 className="w-5 h-5"/>}
+
+            {title}
+
+        </h3>
+
+        <div className={`border-l-4 p-4 rounded-r-lg ${isDarkMode ? `bg-${color}-500/10 border-${color}-400` : `bg-${color}-50 border-${color}-500`}`}>
+
+            <p className="leading-relaxed">{answer}</p>
+
+        </div>
+
+    </div>
+
+);
+
+
+
+const ExplanationBox = ({ title, content, color, isDarkMode }) => (
+
+  <div>
+
+    <h3 className={`text-md font-bold mb-2 ${isDarkMode ? `text-${color}-400` : `text-${color}-600`}`}>{title}</h3>
+
+    <div className={`border-l-4 p-4 rounded-r-lg ${isDarkMode ? `bg-${color}-500/10 border-${color}-400` : `bg-${color}-50 border-${color}-500`}`}>
+
+      <p className="leading-relaxed whitespace-pre-wrap">{content}</p>
+
+    </div>
+
+  </div>
+
+);
+
+
+
+const getScoreColor = (score, isDarkMode) => {
+
+  if (score >= 90) return isDarkMode ? 'text-green-400' : 'text-green-600';
+
+  if (score >= 80) return isDarkMode ? 'text-blue-400' : 'text-blue-600';
+
+  if (score >= 70) return isDarkMode ? 'text-yellow-400' : 'text-yellow-500';
+
+  if (score >= 60) return isDarkMode ? 'text-orange-400' : 'text-orange-500';
+
+  return isDarkMode ? 'text-red-400' : 'text-red-600';
+
+};
+
